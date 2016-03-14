@@ -8,14 +8,14 @@ import dsn.base.error_code;
 
 public class rrdb_write_operator extends rrdb_operator {
 	@Override
-	public void client_execute(rrdb.Client client) throws TException {}
+	public void client_send(rrdb.Client client) throws TException {}
 
+	public void recv_data(org.apache.thrift.protocol.TProtocol iprot) throws TException {}
 	@Override
 	public error_code get_result_error() {
 		return resp.ec;
 	}
 	
-	@Override
 	public dsn.replication.global_partition_id get_op_gpid() {
 		return header.gpid;
 	}
@@ -27,6 +27,7 @@ public class rrdb_write_operator extends rrdb_operator {
 	public rrdb_write_operator(dsn.replication.write_request_header header) {
 		this.header = header;
 	}
+	
 	protected dsn.replication.write_request_header header;
 	protected replication_write_response resp;
 };

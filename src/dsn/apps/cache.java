@@ -2,15 +2,12 @@ package dsn.apps;
 
 import java.util.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.TServiceClient;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
-import dsn.base.error_code;
 import dsn.base.error_code.error_types;
 import dsn.operator.client_operator;
 import dsn.replication.global_partition_id;
@@ -20,8 +17,6 @@ import dsn.thrift.TMsgBlockProtocol;
 import dsn.thrift.TMsgBlockTransport;
 
 public class cache {
-	private static final Logger LOGGER = LoggerFactory.getLogger(cache.class.getName());
-	
 	public static class CacheLogicException extends Exception
 	{
 		private static final long serialVersionUID = 4186015142427786503L;
@@ -58,10 +53,16 @@ public class cache {
 		}
 	}
 	
+	public static abstract class ConcurrencyClientFactory {
+		public abstract TServiceClient getClient(dsn.base.rpc_address address, int partition_id);
+		public abstract TServiceClient getClient(int partition_id);
+	}
+	
 	public static class table_handler {
 		private cluster_handler c_;
 		private String table_name_;
 		private int app_id_;
+		private ConcurrencyClientFactory factory_;
 		private TServiceClient[] clients_;
 
 		private int get_partition_hash(String key) 
@@ -80,47 +81,22 @@ public class cache {
 				for (dsn.replication.partition_configuration pc: resp.partitions) {
 					if (!pc.primary.isInvalid())
 					{
-						try 
-						{
-							clients_[pc.gpid.pidx] = rrdb_client.create_rpc_server_client(pc.primary);							
-						}
-						catch(CacheLogicException e)
-						{
-							LOGGER.warn("primary address invalid {} in gpid: {}", pc.primary.toString(), pc.gpid.toString());
-						}
+						//TODO: make this an function 
+						clients_[pc.gpid.pidx] = factory_.getClient(pc.primary, pc.gpid.pidx);
 					}
+					else
+						clients_[pc.gpid.pidx] = factory_.getClient(pc.gpid.pidx);
 				}
 			}
 			else
 				throw new CacheLogicException(CacheLogicException.READ_TABLE_ERROR, resp.err.toString());
 		}
 		
-		private void refresh_replica_server_internal(int partition_id) throws CacheLogicException, TException
-		{
-			dsn.replication.query_cfg_request request = new dsn.replication.query_cfg_request(table_name_, new ArrayList<Integer>());
-			request.partition_indices.add(partition_id);
-			
-			dsn.replication.query_cfg_response resp = c_.call_meta(request);
-			if (resp.err.errno == error_types.ERR_OK)
-			{
-				assert resp.partitions.size() == 1;
-				dsn.replication.partition_configuration pc = resp.partitions.get(0);
-				assert pc.gpid.pidx == partition_id;
-				
-				if (pc.primary.isInvalid() && pc.secondaries.isEmpty())
-					throw new CacheLogicException(CacheLogicException.NO_REPLICA);
-				else if (pc.primary.isInvalid())
-					throw new CacheLogicException(CacheLogicException.NO_PRIMARY);
-				clients_[partition_id] = rrdb_client.create_rpc_server_client(pc.primary);
-			}
-			else
-				throw new CacheLogicException(CacheLogicException.READ_TABLE_ERROR, resp.err.toString());
-		}
-		
-		public table_handler(cluster_handler c, String name) throws CacheLogicException, TException 
+		public table_handler(cluster_handler c, String name, ConcurrencyClientFactory factory) throws CacheLogicException, TException 
 		{
 			c_ = c;
 			table_name_ = name;
+			factory_ = factory;
 			query_partition_count();
 		}
 		
@@ -131,64 +107,44 @@ public class cache {
 			return result;
 		}
 		
-		private TServiceClient get_replica_server(int partition_id, boolean doing_refresh) throws TException, CacheLogicException 
+		public dsn.base.rpc_address query_rpc_address(int partition_id) throws CacheLogicException, TException
 		{
-			if (partition_id < 0 || partition_id >= clients_.length)
-				throw new CacheLogicException(CacheLogicException.INVALID_ARGUMETNS);
-			if (clients_[partition_id] == null || doing_refresh)
-				refresh_replica_server_internal(partition_id);
-			return clients_[partition_id];
+			dsn.replication.query_cfg_request req = new dsn.replication.query_cfg_request(
+					table_name_, 
+					new ArrayList<Integer>());
+			req.partition_indices.add(partition_id);
+			dsn.replication.query_cfg_response resp = c_.call_meta(req);
+			if (resp.err.errno == error_types.ERR_OK)
+			{
+				dsn.replication.partition_configuration pc = resp.partitions.get(0);
+				if (pc.primary.isInvalid() && pc.secondaries.isEmpty())
+					throw new CacheLogicException(CacheLogicException.NO_REPLICA);
+				else if (pc.primary.isInvalid())
+					throw new CacheLogicException(CacheLogicException.NO_PRIMARY);
+				return pc.primary;
+			}
+			else
+				throw new CacheLogicException(CacheLogicException.READ_TABLE_ERROR, resp.err.toString());
 		}
 		
 		public void operate(client_operator op) throws TException, CacheLogicException
 		{
 			global_partition_id gpid = op.get_op_gpid();
-			boolean do_refresh = false;
-			while (true) {
-				try {
-					TServiceClient c = get_replica_server(gpid.pidx, do_refresh);
-					
-					if ( !c.getOutputProtocol().getTransport().isOpen() )
-						c.getOutputProtocol().getTransport().open();
-					op.execute(c);
-					// write operation's replication error type: 
-					// ERR_INVALID_DATA, the task code is not valid
-					// ERR_OBJECT_NOT_FOUND, the replica not found on the meta
-					// ERR_INVALID_STATE, the sever state is not primary
-					// ERR_NOT_ENOUGH_MEMBER, replica count is not enough
-					// ERR_CAPACITY_EXCEEDED, bounded exceeded
-					
-					// read opertion's replication error type:
-					// ERR_INVALID_DATA, the task code is not valid
-					// ERR_OBJECT_NOT_FOUND, the replica not found on the meta
-					// ERR_INVALID_STATE, can't read data due to the semantic and the server state
-					error_code ec = op.get_result_error();
-					if (ec.errno == error_types.ERR_OK)
-						return;
-					else if (ec.errno == error_types.ERR_INVALID_DATA)
-						throw new CacheLogicException(CacheLogicException.REPLICATION_ERROR, ec.toString());
-					else
-						do_refresh = true;
-				}
-				catch (TTransportException e) //network failure
-				{
-					do_refresh = true;
-				}
-				catch (CacheLogicException e)
-				{
-					switch (e.type)
-					{
-					case CacheLogicException.NO_PRIMARY:
-					case CacheLogicException.NO_REPLICA:
-						do_refresh = true;
-					default:
-						throw e;
-					}
-				}
+			concurrency_rrdb c = (concurrency_rrdb)clients_[gpid.pidx];
+			concurrency_rrdb.client_seqid sequence = c.send_message(op, this);
+
+			// write operation's replication error type: 
+			// ERR_INVALID_DATA, the task code is not valid
+			// ERR_OBJECT_NOT_FOUND, the replica not found on the meta
+			// ERR_INVALID_STATE, the sever state is not primary
+			// ERR_NOT_ENOUGH_MEMBER, replica count is not enough
+			// ERR_CAPACITY_EXCEEDED, bounded exceeded
 				
-				if (do_refresh) 
-					utils.utils.sleepFor(1000);			
-			}
+			// read opertion's replication error type:
+			// ERR_INVALID_DATA, the task code is not valid
+			// ERR_OBJECT_NOT_FOUND, the replica not found on the meta
+			// ERR_INVALID_STATE, can't read data due to the semantic and the server state
+			c.recv_message(sequence, op, this);
 		}
 	}
 	
@@ -218,9 +174,9 @@ public class cache {
 			metas_.add(client);
 		}
 		
-		table_handler open_table(String name) throws CacheLogicException, TException
+		table_handler open_table(String name, ConcurrencyClientFactory factory) throws CacheLogicException, TException
 		{
-			table_handler handle = new table_handler(this, name);
+			table_handler handle = new table_handler(this, name, factory);
 			return handle;
 		}
 		

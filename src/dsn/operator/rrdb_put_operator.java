@@ -1,6 +1,7 @@
 package dsn.operator;
 
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TProtocol;
 
 import dsn.apps.rrdb;
 import dsn.apps.update_request;
@@ -12,8 +13,18 @@ public class rrdb_put_operator extends rrdb_write_operator {
 		this.request = request;
 	}
 	
-	public void client_execute(rrdb.Client client) throws TException {
-		resp = client.put(super.header, request);
+	public void client_send(rrdb.Client client) throws TException {
+		client.send_put(header, request);
 	}
+	
+	public void recv_data(TProtocol iprot) throws TException {
+		rrdb.put_result result = new rrdb.put_result();
+		result.read(iprot);
+		if (result.isSetSuccess())
+			resp = result.success;
+		else
+			throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "put failed: unknown result");		
+	}
+
 	private update_request request;
 }

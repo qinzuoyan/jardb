@@ -14,9 +14,20 @@ public class rrdb_get_operator extends rrdb_operator {
 		this.header = header;
 		this.request = request;
 	}
-	public void client_execute(rrdb.Client client) throws TException {
-		resp = client.get(header, request);
+	public void client_send(rrdb.Client client) throws TException {
+		client.send_get(header, request);
 	}
+	
+	public void recv_data(org.apache.thrift.protocol.TProtocol iprot) throws TException
+	{
+		rrdb.get_result result = new rrdb.get_result();
+		result.read(iprot);
+		if (result.isSetSuccess())
+			resp = result.success;
+		else
+			throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "get failed: unknown result");
+	}
+	
 	public error_code get_result_error() {
 		return resp.ec;
 	}

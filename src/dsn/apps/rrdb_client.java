@@ -79,41 +79,7 @@ public class rrdb_client {
 		return op.get_response().app_response;
 	}
 	
-	public static class MethodCallback implements AsyncMethodCallback{
-		public Object response = null;
-		@Override
-		public void onComplete(Object arg0) {
-			response = arg0;
-			System.out.println(response);
-		}
-
-		@Override
-		public void onError(Exception arg0) {
-			// TODO Auto-generated method stub
-			arg0.printStackTrace();
-		}
-		
-	}
-	
 	public static void main(String []args) throws TException, IOException
 	{
-		TProtocolFactory factory = new TBinaryProtocol.Factory();
-		TAsyncClientManager manager = new TAsyncClientManager();
-		meta.AsyncClient client = new meta.AsyncClient(factory, manager, new TNonblockingSocket("localhost", 9090));
-		
-		query_cfg_request req = new query_cfg_request("rrdb.instance0", new ArrayList<Integer>());
-		MethodCallback c = new MethodCallback();
-		client.query_cfg(req, c);
-		while ( c.response == null)
-			utils.utils.sleepFor(1000);
-		/*
-		TTransport transport = new TSocket("localhost", 9090);
-		TBinaryProtocol msgProtocol = new TBinaryProtocol(transport);		
-		meta.Client c = new meta.Client(msgProtocol);
-		transport.open();
-		
-		query_cfg_request query = new query_cfg_request("rrdb.instance0", new ArrayList<Integer>());
-		System.out.println( c.query_cfg(query) );
-		*/
 	}
 }

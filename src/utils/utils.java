@@ -19,4 +19,12 @@ public class utils {
 			}
 		}
 	}
+	
+	public static void waitForever(Object obj) {
+		try {
+			obj.wait();
+		}
+		catch (InterruptedException e) {
+		}
+	}
 }

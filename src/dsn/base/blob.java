@@ -99,7 +99,9 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
   public blob() {
 	data = null;
   }
-
+  public blob(String data) {
+	this.data = data;
+  }
   /**
    * Performs a deep copy on <i>other</i>.
    */

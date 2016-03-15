@@ -127,11 +127,15 @@ public class concurrency_rrdb extends rrdb.Client
 							op.recv_data(iprot_);
 							iprot_.readMessageEnd();
 							has_pending_ = false;
-							recv_lock_.notify();
+							recv_lock_.notifyAll();
 							return;
 						}
 						else {
-							utils.utils.waitForever(recv_lock_);
+							try {
+								recv_lock_.wait();
+							}
+							catch (InterruptedException e) {
+							}
 						}
 					}
 					else {
@@ -139,12 +143,16 @@ public class concurrency_rrdb extends rrdb.Client
 						if (msg.seqid == seqid.sequence_id) {
 							op.recv_data(iprot_);
 							iprot_.readMessageEnd();
+							return;
 						}
 						else {
 							pending_recv_seqid_ = msg.seqid;
 							has_pending_ = true;
-							recv_lock_.notify();
-							utils.utils.waitForever(recv_lock_);
+							try {
+								recv_lock_.wait();
+							}
+							catch (InterruptedException e) {								
+							}
 						}
 					}
 				}

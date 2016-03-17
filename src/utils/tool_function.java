@@ -1,6 +1,6 @@
 package utils;
 
-public class utils {
+public class tool_function {
 	private static class dsn_crc 
 	{
 		public static final long crc64_poly = 0x9a6c9329ac4bc9b5l;

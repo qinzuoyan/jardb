@@ -26,7 +26,7 @@ public class cache
 	public static class default_hasher implements key_hasher {
 		@Override
 		public long hash(String key) {
-			return utils.utils.dsn_crc64(key.getBytes());
+			return utils.tool_function.dsn_crc64(key.getBytes());
 		}
 	}
 	
@@ -89,7 +89,7 @@ public class cache
 					catch(ReplicationException e) 
 					{
 						if (e.err_type == error_types.ERR_NO_PRIMARY)
-							utils.utils.sleepFor(1000);
+							utils.tool_function.sleepFor(1000);
 						else
 							throw e;
 					}
@@ -147,6 +147,7 @@ public class cache
 		public void operate(client_operator op) throws TException, ReplicationException
 		{
 			global_partition_id gpid = op.get_op_gpid();
+			op.notifier = utils.threads.get_notifier();
 			
 			rpc_session c = get_client(gpid.pidx, !FORCE_SYNC, -1);
 			long signature_ = c.get_session_signature();
@@ -168,6 +169,7 @@ public class cache
 				c.recv_message2(sequence, op, this);
 				total_time += (System.currentTimeMillis() - value);
 				
+				System.out.printf("%s recv ok: seqid: %d\n", Thread.currentThread().getName(), sequence.sequence_id);
 				switch (op.get_result_error().errno)
 				{
 				case ERR_OK:
@@ -182,6 +184,7 @@ public class cache
 			catch (TTransportException e) {
 				logger.info("error{} for replication server of {}", e.getMessage(), gpid.toString());
 				c = get_client(gpid.pidx, FORCE_SYNC, signature_);
+				throw e;
 			}
 		}
 	}
@@ -245,7 +248,7 @@ public class cache
 					{
 						logger.info("can't connect to meta temporarily, coz {}, just wait for a while", 
 								i>=metas_.size()?"no meta ready":"leader not active");
-						utils.utils.sleepFor(1000);
+						utils.tool_function.sleepFor(1000);
 					}
 					else
 						return resp;

@@ -140,7 +140,7 @@ public class Cluster {
 				++assigned_get;			
 			}
 			
-			System.out.println(System.currentTimeMillis() - time);
+			System.out.printf("execute time for %s, %d\n", name, System.currentTimeMillis() - time);
 			long expected_sum = 0;
 			for (int v: values)
 				expected_sum += v;
@@ -167,8 +167,9 @@ public class Cluster {
 		System.out.println("read result: " + resp.toString());
 		
 		System.out.println("start to run thread test");
+		
 		ArrayList<VisitThread> threadList = new ArrayList<VisitThread>();
-		for (int i=0; i<10; ++i)
+		for (int i=0; i<1; ++i)
 			threadList.add(new VisitThread("Thread_" + String.valueOf(i) + "_", t) );
 		for (VisitThread vt: threadList)
 			vt.start();

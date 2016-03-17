@@ -3,10 +3,7 @@ package dsn.apps;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.Queue;
-import java.util.LinkedList;
 
 import dsn.base.error_code;
 import dsn.thrift.TMsgBlockProtocol;
@@ -86,7 +83,8 @@ public class rpc_session extends rrdb.Client
 			if ( is_remove_it ) {
 				Object old = op_[offset];
 				op_[offset] = null;
-				--count_;
+				if (old != null) 
+					--count_;
 				return old;
 			}
 			else
@@ -133,14 +131,15 @@ public class rpc_session extends rrdb.Client
 	
 	private final Object recv_lock_ = new Object();
 	private int pending_recv_seqid_ = 0;
-	private boolean has_pending_ = false;		
+	private boolean has_pending_ = false;
 	private circular_queue pending_ops_fast_;
 	private Map<Integer, Object> pending_ops_slow_;
 	
 	public rpc_session(dsn.base.rpc_address addr) {
 		super(null);
 		this.addr_ = addr;
-		seqid_ = (int)(Math.random()*Integer.MAX_VALUE);
+		//seqid_ = (int)(Math.random()*Integer.MAX_VALUE);
+		seqid_ = 0;
 		pending_ops_fast_ = new circular_queue(12, seqid_);
 		pending_ops_slow_ = new TreeMap<Integer, Object>();
 		
@@ -217,7 +216,7 @@ public class rpc_session extends rrdb.Client
 							return;
 						}
 						else 
-							utils.utils.waitForever(recv_lock_);
+							utils.tool_function.waitForever(recv_lock_);
 					}
 					else {
 						TMessage msg = iprot_.readMessageBegin();
@@ -229,7 +228,7 @@ public class rpc_session extends rrdb.Client
 						else {
 							pending_recv_seqid_ = msg.seqid;
 							has_pending_ = true;
-							utils.utils.waitForever(recv_lock_);
+							utils.tool_function.waitForever(recv_lock_);
 						}
 					}
 				}
@@ -250,20 +249,17 @@ public class rpc_session extends rrdb.Client
 		pending_ops_slow_.clear();
 	}
 	
-	private void handle_corresbonding_message(request_signature seqid, dsn.operator.client_operator op) throws TException
+	private void handle_pending_ops(request_signature seqid) throws TException
 	{
-		op.recv_data(iprot_);
-		iprot_.readMessageEnd();
-		
-		while ( pending_ops_fast_.count() + pending_ops_slow_.size() > 0)
+		while ( pending_ops_fast_.count()>0 || !pending_ops_slow_.isEmpty())
 		{
 			TMessage msg = iprot_.readMessageBegin();
-			dsn.operator.client_operator another_pending_op = 
+			dsn.operator.client_operator pending_op = 
 					(dsn.operator.client_operator)get_pending_op(msg.seqid, true);
-			if (another_pending_op != null) {
-				another_pending_op.recv_data(iprot_);
+			if (pending_op != null) {
+				pending_op.recv_data(iprot_);
 				iprot_.readMessageEnd();
-				utils.utils.notify(another_pending_op);
+				utils.tool_function.notify(pending_op.notifier);
 			}
 			else {
 				has_pending_ = true;
@@ -282,7 +278,7 @@ public class rpc_session extends rrdb.Client
 			return pending_ops_fast_.get(dist, is_remove_it);
 		Integer key = new Integer(sequence_id);
 		Object obj =  pending_ops_slow_.get(key);
-		if (obj != null)
+		if (obj != null && is_remove_it)
 			pending_ops_slow_.remove(key);
 		return obj;
 	}
@@ -300,6 +296,7 @@ public class rpc_session extends rrdb.Client
 				Object first_op = pending_ops_fast_.pop();
 				if (first_op != null)
 					pending_ops_slow_.put(new Integer(pending_ops_fast_.start_seqid_), first_op);
+				--d;
 			}
 			pending_ops_fast_.put(d, op);
 		}
@@ -319,20 +316,37 @@ public class rpc_session extends rrdb.Client
 					if (pending_recv_seqid_ == seqid.sequence_id)
 					{
 						has_pending_ = false;
-						handle_corresbonding_message(seqid, op);
+						op.recv_data(iprot_);
+						iprot_.readMessageEnd();
+						handle_pending_ops(seqid);
 						return;
 					}
 				}
 				else {
-					TMessage msg = iprot_.readMessageBegin();
-					if (msg.seqid == seqid.sequence_id) {
-						handle_corresbonding_message(seqid, op);
+					boolean myself_handled = false;
+					while ( !myself_handled || pending_ops_fast_.count() > 0 || !pending_ops_slow_.isEmpty()) {
+						TMessage msg = iprot_.readMessageBegin();
+						if ( !myself_handled && msg.seqid == seqid.sequence_id) {
+							op.recv_data(iprot_);
+							iprot_.readMessageEnd();
+							myself_handled = true;
+						}
+						else {
+							dsn.operator.client_operator another = (dsn.operator.client_operator)get_pending_op(msg.seqid, true);
+							if (another != null) {
+								another.recv_data(iprot_);
+								iprot_.readMessageEnd();
+								utils.tool_function.notify(another.notifier);
+							}
+							else {
+								has_pending_ = true;
+								pending_recv_seqid_ = msg.seqid;
+								break;
+							}
+						}
+					}
+					if (myself_handled) 
 						return;
-					}
-					else {
-						has_pending_ = true;
-						pending_recv_seqid_ = msg.seqid;
-					}
 				}
 				put_pending_op(seqid.sequence_id, op);
 			}
@@ -345,21 +359,21 @@ public class rpc_session extends rrdb.Client
 					{
 						first = (dsn.operator.client_operator)pending_ops_fast_.pop();
 						first.get_result_error().set_error_type(error_code.error_types.ERR_TIMEOUT);
-						utils.utils.notify(first);
+						utils.tool_function.notify(first);
 					}
 					for (Map.Entry<Integer, Object> entry: pending_ops_slow_.entrySet())
 					{
 						first = (dsn.operator.client_operator)entry.getValue();
 						first.get_result_error().set_error_type(error_code.error_types.ERR_TIMEOUT);
-						utils.utils.notify(first);
+						utils.tool_function.notify(first);
 					}
 					close();
 				}
 				throw e;
 			}
 		}
-		synchronized (op) {
-			utils.utils.waitForever(op);
+		synchronized (op.notifier) {
+			utils.tool_function.waitForever(op.notifier);
 		}
 	}
 }

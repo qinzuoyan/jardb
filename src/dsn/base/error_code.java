@@ -28,6 +28,7 @@ public class error_code implements org.apache.thrift.TBase<error_code, error_cod
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("error_code");
 
   public enum error_types {
+	  // ERROR_CODE copy from rDSN
 	  ERR_OK,
 	  ERR_UNKNOWN,
 	  ERR_REPLICATION_FAILURE,
@@ -95,6 +96,12 @@ public class error_code implements org.apache.thrift.TBase<error_code, error_cod
 	  ERR_DOCKER_BINARY_NOT_FOUND,
 	  ERR_DOCKER_DEPLOY_FAILED,
 	  ERR_DOCKER_UNDEPLOY_FAILED, 
+	  
+	  //ERROR_CODE defined by client
+	  ERR_NO_PRIMARY,
+	  ERR_NO_REPLICA, 
+	  ERR_NO_META_SERVER,
+	  ERR_READ_TABLE_FAILED
   };
   
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
@@ -166,6 +173,14 @@ public class error_code implements org.apache.thrift.TBase<error_code, error_cod
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(error_code.class, metaDataMap);
   }
 
+  public error_code(error_types err_enum_type) {
+	errno = err_enum_type;
+  }
+  public void set_error_type(error_types err_enum_type)
+  {
+	errno = err_enum_type;
+  }
+  
   public error_code() {
 	errno = error_types.ERR_UNKNOWN;
   }

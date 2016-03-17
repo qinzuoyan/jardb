@@ -59,6 +59,12 @@ public class utils {
 		}
 	}
 	
+	public static void notify(Object obj) {
+		synchronized (obj) {
+			obj.notify();
+		}
+	}
+	
 	public static int dsn_crc32(byte[] array) 
 	{
 		int crc = -1;

@@ -25,6 +25,11 @@ public class Table {
 		table_ = cluster.open_table(tableName, new rpc_session.Factory(), hash_function);
 	}
 	
+	public cache.table_handler getRawHandler() 
+	{
+		return table_;
+	}
+	
 	public int put(update_request request_data) throws TException, ReplicationException 
 	{
 		global_partition_id gpid = table_.get_gpid(request_data.key.data);

@@ -40,6 +40,8 @@ public class cache
 		private key_hasher hasher_;
 		private rpc_session[] clients_;
 
+		private static final boolean FORCE_SYNC = true;
+		
 		private void query_partition_count() throws ReplicationException, TException
 		{
 			dsn.replication.query_cfg_request request = new dsn.replication.query_cfg_request(table_name_, new ArrayList<Integer>());			
@@ -60,27 +62,40 @@ public class cache
 				logger.debug("query table {} from meta, got {} partitions", table_name_, resp.partition_count);
 			}
 			else
-				throw new ReplicationException(ReplicationException.ErrorCode.READ_TABLE_ERROR, resp.err.toString());
+				throw new ReplicationException(error_types.ERR_READ_TABLE_FAILED, resp.err.toString());
 		}
 		
-		private rpc_session get_client(int pidx) throws TException, ReplicationException
+		private rpc_session get_client(int pidx, boolean force_sync, long old_signature) throws TException, ReplicationException
 		{
-			rpc_session result = clients_[pidx];
-			while (result == null) {
-				try {
-					dsn.base.rpc_address address = query_rpc_address(pidx);
-					result = factory_.getClient(address);
-					clients_[pidx] = result;
-				}
-				catch(ReplicationException e) 
-				{
-					if (e.type == ReplicationException.ErrorCode.NO_PRIMARY)
-						utils.utils.sleepFor(1000);
-					else
-						throw e;
-				}
+			rpc_session result = null;
+			if ( !force_sync ) {
+				result = clients_[pidx];
+				if (result != null)
+					return result;
 			}
-			return result;
+			
+			synchronized (clients_) {
+				result = clients_[pidx];
+				if (result != null && result.get_session_signature() != old_signature)
+					return result;
+				
+				result = null;
+				while (result == null) {
+					try {
+						dsn.base.rpc_address address = query_rpc_address(pidx);
+						result = factory_.getClient(address);
+						clients_[pidx] = result;
+					}
+					catch(ReplicationException e) 
+					{
+						if (e.err_type == error_types.ERR_NO_PRIMARY)
+							utils.utils.sleepFor(1000);
+						else
+							throw e;
+					}
+				}
+				return result;
+			}
 		}
 		
 		private dsn.base.rpc_address query_rpc_address(int partition_id) throws ReplicationException, TException
@@ -94,14 +109,14 @@ public class cache
 			{
 				dsn.replication.partition_configuration pc = resp.partitions.get(0);
 				if (pc.primary.isInvalid() && pc.secondaries.isEmpty())
-					throw new ReplicationException(ReplicationException.ErrorCode.NO_REPLICA);
+					throw new ReplicationException(error_types.ERR_NO_REPLICA);
 				else if (pc.primary.isInvalid())
-					throw new ReplicationException(ReplicationException.ErrorCode.NO_PRIMARY);
+					throw new ReplicationException(error_types.ERR_NO_PRIMARY);
 				logger.debug("query partition cfg resp:{}", pc.toString());
 				return pc.primary;
 			}
 			else
-				throw new ReplicationException(ReplicationException.ErrorCode.READ_TABLE_ERROR, resp.err.toString());
+				throw new ReplicationException(error_types.ERR_READ_TABLE_FAILED, resp.err.toString());
 		}
 		
 		table_handler(cluster_handler c, String name, rpc_session.Factory factory, key_hasher hasher) throws ReplicationException, TException 
@@ -128,11 +143,14 @@ public class cache
 		//    (2) READ_TABLE_ERROR, read table failed
 		//    (3) NO_REPLICA, no replica server for some partition
 		//    (4) REPLICATION_ERROR, may be message data corrupted
+		public long total_time = 0;
 		public void operate(client_operator op) throws TException, ReplicationException
 		{
 			global_partition_id gpid = op.get_op_gpid();
 			
-			rpc_session c = get_client(gpid.pidx);
+			rpc_session c = get_client(gpid.pidx, !FORCE_SYNC, -1);
+			long signature_ = c.get_session_signature();
+			
 			// write operation's replication error type: 
 			// ERR_INVALID_DATA, the task code is not valid
 			// ERR_OBJECT_NOT_FOUND, the replica not found on the meta
@@ -145,23 +163,25 @@ public class cache
 			// ERR_OBJECT_NOT_FOUND, the replica not found on the meta
 			// ERR_INVALID_STATE, can't read data due to the semantic and the server state
 			try {
-				rpc_session.client_seqid sequence = c.send_message(op);
-				c.recv_message(sequence, op, this);
+				long value = System.currentTimeMillis();
+				rpc_session.request_signature sequence = c.send_message(op);
+				c.recv_message2(sequence, op, this);
+				total_time += (System.currentTimeMillis() - value);
+				
 				switch (op.get_result_error().errno)
 				{
 				case ERR_OK:
 					return;
-				case ERR_INVALID_DATA:
-					throw new ReplicationException(ReplicationException.ErrorCode.REPLICATION_ERROR, String.valueOf(error_types.ERR_INVALID_DATA) );
+				case ERR_INVALID_STATE:
+				case ERR_OBJECT_NOT_FOUND:
+					throw new TTransportException(op.get_result_error().toString());
 				default:
-					throw new TTransportException(op.get_result_error().errno.toString());
+					throw new ReplicationException(error_types.ERR_INVALID_DATA);					
 				}
 			}
 			catch (TTransportException e) {
 				logger.info("error{} for replication server of {}", e.getMessage(), gpid.toString());
-				c.close();
-				clients_[gpid.pidx] = null;
-				c = get_client(gpid.pidx);
+				c = get_client(gpid.pidx, FORCE_SYNC, signature_);
 			}
 		}
 	}
@@ -232,7 +252,7 @@ public class cache
 				}
 			}
 			
-			throw new ReplicationException(ReplicationException.ErrorCode.NO_META);
+			throw new ReplicationException(error_types.ERR_NO_META_SERVER);
 		}
 		
 		public cluster_handler(String name, int retries_count)
@@ -278,7 +298,7 @@ public class cache
 			if ( metas_.isEmpty() )
 			{
 				logger.warn("meta server list is empty");
-				throw new ReplicationException(ReplicationException.ErrorCode.NO_META);
+				throw new ReplicationException(error_types.ERR_NO_META_SERVER);
 			}
 			return call_metas_in_turn(request);
 		}

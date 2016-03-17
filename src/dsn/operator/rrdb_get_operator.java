@@ -31,6 +31,7 @@ public class rrdb_get_operator extends rrdb_operator {
 	public error_code get_result_error() {
 		return resp.ec;
 	}
+	
 	public global_partition_id get_op_gpid() {
 		return header.gpid;
 	}

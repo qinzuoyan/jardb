@@ -91,6 +91,8 @@ public class Cluster {
 			
 			int key_cursor = 0;
 			int total_count = total_keys + removed_keys;
+			
+			long time = System.currentTimeMillis();
 			for (int i=0; i<total_count; ++i)
 			{
 				int t = (int) (Math.random()*(total_count-i));
@@ -138,6 +140,7 @@ public class Cluster {
 				++assigned_get;			
 			}
 			
+			System.out.println(System.currentTimeMillis() - time);
 			long expected_sum = 0;
 			for (int v: values)
 				expected_sum += v;
@@ -180,5 +183,7 @@ public class Cluster {
 			{
 			}
 		}
+		
+		System.out.printf("total time for recv: %d\n", t.getRawHandler().total_time);
 	}
 }

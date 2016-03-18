@@ -14,9 +14,9 @@ public class TMsgBlockProtocol extends org.apache.thrift.protocol.TBinaryProtoco
   {
     RPC_PAIRS.put("get", "RPC_REPLICATION_CLIENT_READ");
     RPC_PAIRS.put("put", "RPC_REPLICATION_CLIENT_WRITE");
-      RPC_PAIRS.put("remove", "RPC_REPLICATION_CLIENT_WRITE");
-      RPC_PAIRS.put("merge", "RPC_REPLICATION_CLIENT_WRITE");     
-      RPC_PAIRS.put("query_cfg", "RPC_CM_QUERY_PARTITION_CONFIG_BY_INDEX");
+    RPC_PAIRS.put("remove", "RPC_REPLICATION_CLIENT_WRITE");
+    RPC_PAIRS.put("merge", "RPC_REPLICATION_CLIENT_WRITE");     
+    RPC_PAIRS.put("query_cfg", "RPC_CM_QUERY_PARTITION_CONFIG_BY_INDEX");
   }
 
   private int reqHash_;

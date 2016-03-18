@@ -102,6 +102,7 @@ public class TMsgBlockTransport extends org.apache.thrift.transport.TTransport {
     catch (IOException e) 
     {
       e.printStackTrace();
+      throw new TTransportException(TTransportException.UNKNOWN, e);
     }
   }
   

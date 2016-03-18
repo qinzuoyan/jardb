@@ -169,7 +169,7 @@ public class Cluster {
 		System.out.println("start to run thread test");
 		
 		ArrayList<VisitThread> threadList = new ArrayList<VisitThread>();
-		for (int i=0; i<1; ++i)
+		for (int i=0; i<20; ++i)
 			threadList.add(new VisitThread("Thread_" + String.valueOf(i) + "_", t) );
 		for (VisitThread vt: threadList)
 			vt.start();

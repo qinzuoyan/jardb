@@ -147,8 +147,8 @@ public class cache
 		public void operate(client_operator op) throws TException, ReplicationException
 		{
 			global_partition_id gpid = op.get_op_gpid();
+
 			op.notifier = utils.threads.get_notifier();
-			
 			rpc_session c = get_client(gpid.pidx, !FORCE_SYNC, -1);
 			long signature_ = c.get_session_signature();
 			
@@ -165,11 +165,11 @@ public class cache
 			// ERR_INVALID_STATE, can't read data due to the semantic and the server state
 			try {
 				long value = System.currentTimeMillis();
-				rpc_session.request_signature sequence = c.send_message(op);
-				c.recv_message2(sequence, op, this);
+				int sequence = c.send_message(op);
+				c.recv_message2(sequence, signature_, op);
 				total_time += (System.currentTimeMillis() - value);
 				
-				System.out.printf("%s recv ok: seqid: %d\n", Thread.currentThread().getName(), sequence.sequence_id);
+				//System.out.println(Thread.currentThread().getName() + "recv ok: seqid " + sequence.sequence_id);
 				switch (op.get_result_error().errno)
 				{
 				case ERR_OK:

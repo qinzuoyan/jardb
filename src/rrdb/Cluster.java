@@ -67,14 +67,14 @@ public class Cluster {
   
   private static class VisitThread extends Thread {
     // so total operations = total_keys + removed_keys
-    private static int total_keys = 1000;
-    private static int removed_keys = 300;
+    private static int total_keys = 1000000;
+    private static int removed_keys = 3000;
     
     private String name;
     private Table table;
-    public VisitThread(Table t)
+    public VisitThread(String name, Table t)
     {
-      this.name = Thread.currentThread().getName() + "_";
+      this.name = name;
       this.table = t;
     }
     
@@ -95,6 +95,7 @@ public class Cluster {
       long time = System.currentTimeMillis();
       for (int i=0; i<total_count; ++i)
       {
+        System.out.println(name + "round " + i);
         int t = (int) (Math.random()*(total_count-i));
         if (t < left_put) {       
           dsn.base.blob key = new dsn.base.blob(name+String.valueOf(key_cursor));
@@ -127,6 +128,7 @@ public class Cluster {
       
       while (assigned_get < total_keys)
       {
+        System.out.println(name + "get round " + assigned_get);
         try {
           dsn.base.blob key = new dsn.base.blob(name + String.valueOf(assigned_get));
           read_response resp = table.get(key);
@@ -171,7 +173,7 @@ public class Cluster {
     
     ArrayList<VisitThread> threadList = new ArrayList<VisitThread>();
     for (int i=0; i<10; ++i)
-      threadList.add(new VisitThread(t) );
+      threadList.add(new VisitThread("Thread_" + String.valueOf(i) + "_", t) );
     for (VisitThread vt: threadList)
       vt.start();
     for (VisitThread vt: threadList)
@@ -233,6 +235,5 @@ public class Cluster {
    
     ping(t);
     multiThreadTest(t);
-    definiteLoop(t);
   }
 }

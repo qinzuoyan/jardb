@@ -152,13 +152,16 @@ public class cache
       long signature_ = c.get_session_signature();
             
       int sequence;
-      try {
-        sequence = c.send_message(op);
-      }
-      catch (TTransportException e) {
-        logger.info("error{} for replication server of {}", e.getMessage(), gpid.toString());
-        c = get_client(gpid.pidx, FORCE_SYNC, signature_);
-        throw e;        
+      
+      while ( true ) {
+        try {
+          sequence = c.send_message(op);
+          break;
+        }
+        catch (TTransportException e) {
+          logger.info("error{} for replication server of {}", e.getMessage(), gpid.toString());
+          c = get_client(gpid.pidx, FORCE_SYNC, signature_);
+        }
       }
       
       // write operation's replication error type: 
@@ -172,31 +175,32 @@ public class cache
       // ERR_INVALID_DATA, the task code is not valid
       // ERR_OBJECT_NOT_FOUND, the replica not found on the meta
       // ERR_INVALID_STATE, can't read data due to the semantic and the server state
-      try {
-        c.recv_message2(sequence, signature_, op);        
-        switch (op.get_result_error().errno)
-        {
-        case ERR_OK:
-          return;
-        case ERR_INVALID_STATE:
-        case ERR_OBJECT_NOT_FOUND:
-          throw new TTransportException(op.get_result_error().toString());
-        default:
-          throw new ReplicationException(error_types.ERR_INVALID_DATA);         
+      while ( true ) {
+        try {
+          c.recv_message2(sequence, signature_, op);        
+          switch (op.get_result_error().errno)
+          {
+          case ERR_OK:
+            return;
+          case ERR_INVALID_STATE:
+          case ERR_OBJECT_NOT_FOUND:
+            throw new TTransportException(op.get_result_error().toString());
+          default:
+            throw new ReplicationException(error_types.ERR_INVALID_DATA);         
+          }
+        }
+        //well, the handling of send and receive are different
+        //if sending a message with an exception which is not an TTransportException
+        //we don't close the socket, and don't flush the client
+        //but for the receiving part, we'd better close the socket as we can't do more
+        //if we got a wrong message
+        catch (TException e) {
+          logger.info("error{} for replication server of {}", e.getMessage(), gpid.toString());
+          c = get_client(gpid.pidx, FORCE_SYNC, signature_);
         }
       }
-      //well, the handling of send and receive are different
-      //if sending a message with an exception which is not an TTransportException
-      //we don't close the socket, and don't flush the client
-      //but for the receiving part, we'd better close the socket as we can't do more
-      //if we got a wrong message
-      catch (TException e) {
-        logger.info("error{} for replication server of {}", e.getMessage(), gpid.toString());
-        c = get_client(gpid.pidx, FORCE_SYNC, signature_);
-        throw e;
-      }
     }
-  }
+   }
   
   public static final class cluster_handler 
   {

@@ -118,15 +118,15 @@ public class rpc_session extends rrdb.Client
       }
     }
   }
-  
+
   public void recv_message(int sequence_id, long signature, dsn.operator.client_operator op) throws TException
   {
     //TODO: optimize the performance 
     synchronized (recv_lock_) {
       while (true) {
         if (signature_ != signature) {
-          op.get_result_error().set_error_type(error_code.error_types.ERR_TIMEOUT);
-          return;          
+          op.set_result_error(dsn.base.error_code.error_types.ERR_TIMEOUT);
+          return;
         }
         try {
           if (has_pending_) 
@@ -210,7 +210,7 @@ public class rpc_session extends rrdb.Client
     synchronized (op.notifier) {
       while (true) {
         if (this.signature_ != signature) {
-          op.get_result_error().set_error_type(error_code.error_types.ERR_TIMEOUT);
+          op.set_result_error(dsn.base.error_code.error_types.ERR_TIMEOUT);
           return;
         }
         synchronized (recv_lock_) {

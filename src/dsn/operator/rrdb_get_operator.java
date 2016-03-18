@@ -32,6 +32,13 @@ public class rrdb_get_operator extends rrdb_operator {
     return resp.ec;
   }
   
+  public void set_result_error(error_code.error_types type) {
+    if (resp == null)
+      resp = new replication_read_response(new error_code(type));
+    else
+      resp.ec = new error_code(type);
+  }
+  
   public global_partition_id get_op_gpid() {
     return header.gpid;
   }

@@ -100,13 +100,13 @@ public class task_code implements org.apache.thrift.TBase<task_code, task_code._
   }
 
   public task_code(String message) {
-	this.task_message = message;
+  this.task_message = message;
   }
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public task_code(task_code other) {
-	task_message = other.task_message;
+  task_message = other.task_message;
   }
 
   public task_code deepCopy() {
@@ -156,7 +156,7 @@ public class task_code implements org.apache.thrift.TBase<task_code, task_code._
 
   @Override
   public int hashCode() {
-	return task_message.hashCode();
+  return task_message.hashCode();
   }
 
   @Override

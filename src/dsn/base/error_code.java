@@ -28,80 +28,80 @@ public class error_code implements org.apache.thrift.TBase<error_code, error_cod
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("error_code");
 
   public enum error_types {
-	  // ERROR_CODE copy from rDSN
-	  ERR_OK,
-	  ERR_UNKNOWN,
-	  ERR_REPLICATION_FAILURE,
-	  ERR_APP_EXIST,
-	  ERR_APP_NOT_EXIST,
-	  ERR_BUSY_CREATING,
-	  ERR_BUSY_DROPPING,
-	  ERR_EXPIRED,
-	  ERR_LOCK_ALREADY_EXIST,
-	  ERR_HOLD_BY_OTHERS,
-	  ERR_RECURSIVE_LOCK,
-	  ERR_NO_OWNER,
-	  ERR_NODE_ALREADY_EXIST,
-	  ERR_INCONSISTENT_STATE,
-	  ERR_ARRAY_INDEX_OUT_OF_RANGE,
-	  ERR_SERVICE_NOT_FOUND,
-	  ERR_SERVICE_ALREADY_RUNNING,
-	  ERR_IO_PENDING,
-	  ERR_TIMEOUT,
-	  ERR_SERVICE_NOT_ACTIVE,
-	  ERR_BUSY,
-	  ERR_NETWORK_INIT_FAILED,
-	  ERR_FORWARD_TO_OTHERS,
-	  ERR_OBJECT_NOT_FOUND,
-	  ERR_HANDLER_NOT_FOUND,
-	  ERR_LEARN_FILE_FAILED,
-	  ERR_GET_LEARN_STATE_FAILED,
-	  ERR_INVALID_VERSION,
-	  ERR_INVALID_PARAMETERS,
-	  ERR_CAPACITY_EXCEEDED,
-	  ERR_INVALID_STATE,
-	  ERR_INACTIVE_STATE,
-	  ERR_NOT_ENOUGH_MEMBER,
-	  ERR_FILE_OPERATION_FAILED,
-	  ERR_HANDLE_EOF,
-	  ERR_WRONG_CHECKSUM,
-	  ERR_INVALID_DATA,
-	  ERR_INVALID_HANDLE,
-	  ERR_INCOMPLETE_DATA,
-	  ERR_VERSION_OUTDATED,
-	  ERR_PATH_NOT_FOUND,
-	  ERR_PATH_ALREADY_EXIST,
-	  ERR_ADDRESS_ALREADY_USED,
-	  ERR_STATE_FREEZED,
-	  ERR_LOCAL_APP_FAILURE,
-	  ERR_BIND_IOCP_FAILED,
-	  ERR_NETWORK_START_FAILED,
-	  ERR_NOT_IMPLEMENTED,
-	  ERR_CHECKPOINT_FAILED,
-	  ERR_WRONG_TIMING,
-	  ERR_NO_NEED_OPERATE,
-	  ERR_CORRUPTION,
-	  ERR_TRY_AGAIN,
-	  ERR_CLUSTER_NOT_FOUND,
-	  ERR_CLUSTER_ALREADY_EXIST,
-	  ERR_ZOOKEEPER_OPERATION,
-	  ERR_K8S_CLUSTER_NOT_FOUND,
-	  ERR_K8S_KUBECTL_NOT_FOUND,
-	  ERR_K8S_DEPLOY_FAILED,
-	  ERR_K8S_UNDEPLOY_FAILED,
-	  ERR_RESOURCE_NOT_ENOUGH,
-	  ERR_WIN_DEPLOY_FAILED,
-	  ERR_WIN_UNDEPLOY_FAILED,
-	  ERR_DOCKER_DAEMON_NOT_FOUND,
-	  ERR_DOCKER_BINARY_NOT_FOUND,
-	  ERR_DOCKER_DEPLOY_FAILED,
-	  ERR_DOCKER_UNDEPLOY_FAILED, 
-	  
-	  //ERROR_CODE defined by client
-	  ERR_NO_PRIMARY,
-	  ERR_NO_REPLICA, 
-	  ERR_NO_META_SERVER,
-	  ERR_READ_TABLE_FAILED
+    // ERROR_CODE copy from rDSN
+    ERR_OK,
+    ERR_UNKNOWN,
+    ERR_REPLICATION_FAILURE,
+    ERR_APP_EXIST,
+    ERR_APP_NOT_EXIST,
+    ERR_BUSY_CREATING,
+    ERR_BUSY_DROPPING,
+    ERR_EXPIRED,
+    ERR_LOCK_ALREADY_EXIST,
+    ERR_HOLD_BY_OTHERS,
+    ERR_RECURSIVE_LOCK,
+    ERR_NO_OWNER,
+    ERR_NODE_ALREADY_EXIST,
+    ERR_INCONSISTENT_STATE,
+    ERR_ARRAY_INDEX_OUT_OF_RANGE,
+    ERR_SERVICE_NOT_FOUND,
+    ERR_SERVICE_ALREADY_RUNNING,
+    ERR_IO_PENDING,
+    ERR_TIMEOUT,
+    ERR_SERVICE_NOT_ACTIVE,
+    ERR_BUSY,
+    ERR_NETWORK_INIT_FAILED,
+    ERR_FORWARD_TO_OTHERS,
+    ERR_OBJECT_NOT_FOUND,
+    ERR_HANDLER_NOT_FOUND,
+    ERR_LEARN_FILE_FAILED,
+    ERR_GET_LEARN_STATE_FAILED,
+    ERR_INVALID_VERSION,
+    ERR_INVALID_PARAMETERS,
+    ERR_CAPACITY_EXCEEDED,
+    ERR_INVALID_STATE,
+    ERR_INACTIVE_STATE,
+    ERR_NOT_ENOUGH_MEMBER,
+    ERR_FILE_OPERATION_FAILED,
+    ERR_HANDLE_EOF,
+    ERR_WRONG_CHECKSUM,
+    ERR_INVALID_DATA,
+    ERR_INVALID_HANDLE,
+    ERR_INCOMPLETE_DATA,
+    ERR_VERSION_OUTDATED,
+    ERR_PATH_NOT_FOUND,
+    ERR_PATH_ALREADY_EXIST,
+    ERR_ADDRESS_ALREADY_USED,
+    ERR_STATE_FREEZED,
+    ERR_LOCAL_APP_FAILURE,
+    ERR_BIND_IOCP_FAILED,
+    ERR_NETWORK_START_FAILED,
+    ERR_NOT_IMPLEMENTED,
+    ERR_CHECKPOINT_FAILED,
+    ERR_WRONG_TIMING,
+    ERR_NO_NEED_OPERATE,
+    ERR_CORRUPTION,
+    ERR_TRY_AGAIN,
+    ERR_CLUSTER_NOT_FOUND,
+    ERR_CLUSTER_ALREADY_EXIST,
+    ERR_ZOOKEEPER_OPERATION,
+    ERR_K8S_CLUSTER_NOT_FOUND,
+    ERR_K8S_KUBECTL_NOT_FOUND,
+    ERR_K8S_DEPLOY_FAILED,
+    ERR_K8S_UNDEPLOY_FAILED,
+    ERR_RESOURCE_NOT_ENOUGH,
+    ERR_WIN_DEPLOY_FAILED,
+    ERR_WIN_UNDEPLOY_FAILED,
+    ERR_DOCKER_DAEMON_NOT_FOUND,
+    ERR_DOCKER_BINARY_NOT_FOUND,
+    ERR_DOCKER_DEPLOY_FAILED,
+    ERR_DOCKER_UNDEPLOY_FAILED, 
+    
+    //ERROR_CODE defined by client
+    ERR_NO_PRIMARY,
+    ERR_NO_REPLICA, 
+    ERR_NO_META_SERVER,
+    ERR_READ_TABLE_FAILED
   };
   
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
@@ -174,25 +174,25 @@ public class error_code implements org.apache.thrift.TBase<error_code, error_cod
   }
 
   public error_code(error_types err_enum_type) {
-	errno = err_enum_type;
+    errno = err_enum_type;
   }
   public void set_error_type(error_types err_enum_type)
   {
-	errno = err_enum_type;
+    errno = err_enum_type;
   }
   
   public error_code() {
-	errno = error_types.ERR_UNKNOWN;
+    errno = error_types.ERR_UNKNOWN;
   }
 
   public error_code(String message) {
-	errno = error_types.valueOf(message);
+    errno = error_types.valueOf(message);
   }
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public error_code(error_code other) {
-	this.errno = other.errno;
+  this.errno = other.errno;
   }
 
   public error_code deepCopy() {
@@ -242,7 +242,7 @@ public class error_code implements org.apache.thrift.TBase<error_code, error_cod
 
   @Override
   public int hashCode() {
-	return this.errno.hashCode();
+  return this.errno.hashCode();
   }
 
   @Override

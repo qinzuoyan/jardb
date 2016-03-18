@@ -97,16 +97,16 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
   }
 
   public blob() {
-	data = null;
+  data = null;
   }
   public blob(String data) {
-	this.data = data;
+  this.data = data;
   }
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public blob(blob other) {
-	data = other.data;
+  data = other.data;
   }
 
   public blob deepCopy() {
@@ -115,7 +115,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
 
   @Override
   public void clear() {
-	data = null;
+  data = null;
   }
 
   public void setFieldValue(_Fields field, Object value) {
@@ -157,7 +157,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
 
   @Override
   public int hashCode() {
-	return data.hashCode();
+  return data.hashCode();
   }
 
   @Override

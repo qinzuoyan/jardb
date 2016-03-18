@@ -113,31 +113,31 @@ public class rpc_address implements org.apache.thrift.TBase<rpc_address, rpc_add
   }
 
   public rpc_address() {
-	this.address = 0;
+  this.address = 0;
   }
 
   public boolean isInvalid() {
-	return this.address == 0;
+  return this.address == 0;
   }
   
   public String get_ip() throws UnknownHostException 
   {
-	byte[] byte_array = new byte[] {
-	  (byte)(0xff & (address >> 56)),
-	  (byte)(0xff & (address >> 48)),
-	  (byte)(0xff & (address >> 40)),
-	  (byte)(0xff & (address >> 32))
-	};
-	return InetAddress.getByAddress(byte_array).getHostAddress();
+  byte[] byte_array = new byte[] {
+    (byte)(0xff & (address >> 56)),
+    (byte)(0xff & (address >> 48)),
+    (byte)(0xff & (address >> 40)),
+    (byte)(0xff & (address >> 32))
+  };
+  return InetAddress.getByAddress(byte_array).getHostAddress();
   }
   public int get_port() {
-	return (int)(0xffff&(address >> 16));
+  return (int)(0xffff&(address >> 16));
   }
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public rpc_address(rpc_address other) {
-	this.address = other.address;
+  this.address = other.address;
   }
 
   public rpc_address deepCopy() {
@@ -146,7 +146,7 @@ public class rpc_address implements org.apache.thrift.TBase<rpc_address, rpc_add
 
   @Override
   public void clear() {
-	this.address = 0;
+  this.address = 0;
   }
 
   public void setFieldValue(_Fields field, Object value) {
@@ -188,12 +188,12 @@ public class rpc_address implements org.apache.thrift.TBase<rpc_address, rpc_add
 
   @Override
   public int hashCode() {
-	return Long.hashCode(address);
+  return Long.hashCode(address);
   }
 
   @Override
   public int compareTo(rpc_address other) {
-	return Long.compare(address, other.address);
+  return Long.compare(address, other.address);
   }
 
   public _Fields fieldForId(int fieldId) {

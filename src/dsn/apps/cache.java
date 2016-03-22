@@ -18,12 +18,12 @@ import dsn.thrift.TMsgBlockTransport;
 
 public class cache 
 {
-  public static interface key_hasher
+  public interface key_hash
   {
-    public long hash(String key);
+    long hash(String key);
   }
 
-  public static class default_hasher implements key_hasher {
+  public static class default_hasher implements key_hash {
     @Override
     public long hash(String key) {
       return utils.tools.dsn_crc64(key.getBytes());
@@ -37,7 +37,7 @@ public class cache
     private String table_name_;
     private int app_id_;
     private rpc_session.Factory factory_;
-    private key_hasher hasher_;
+    private key_hash hasher_;
     private rpc_session[] clients_;
 
     private static final boolean FORCE_SYNC = true;
@@ -53,7 +53,6 @@ public class cache
         for (dsn.replication.partition_configuration pc: resp.partitions) {
           if (!pc.primary.isInvalid())
           {
-            //TODO: make this an function 
             clients_[pc.gpid.pidx] = factory_.getClient(pc.primary);
           }
           else
@@ -108,18 +107,18 @@ public class cache
       if (resp.err.errno == error_types.ERR_OK)
       {
         dsn.replication.partition_configuration pc = resp.partitions.get(0);
+        logger.debug("query partition cfg resp:{}", pc.toString());
         if (pc.primary.isInvalid() && pc.secondaries.isEmpty())
           throw new ReplicationException(error_types.ERR_NO_REPLICA);
         else if (pc.primary.isInvalid())
           throw new ReplicationException(error_types.ERR_NO_PRIMARY);
-        logger.debug("query partition cfg resp:{}", pc.toString());
         return pc.primary;
       }
       else
         throw new ReplicationException(error_types.ERR_READ_TABLE_FAILED, resp.err.toString());
     }
     
-    table_handler(cluster_handler c, String name, rpc_session.Factory factory, key_hasher hasher) throws ReplicationException, TException 
+    table_handler(cluster_handler c, String name, rpc_session.Factory factory, key_hash hasher) throws ReplicationException, TException
     {
       c_ = c;
       table_name_ = name;
@@ -147,7 +146,6 @@ public class cache
     {
       global_partition_id gpid = op.get_op_gpid();
 
-      op.notifier = utils.threads.get_notifier();
       rpc_session c = get_client(gpid.pidx, !FORCE_SYNC, -1);
       long signature_ = c.get_session_signature();
             
@@ -184,6 +182,7 @@ public class cache
             return;
           case ERR_INVALID_STATE:
           case ERR_OBJECT_NOT_FOUND:
+          case ERR_TIMEOUT:
             throw new TTransportException(op.get_result_error().toString());
           default:
             throw new ReplicationException(error_types.ERR_INVALID_DATA);         
@@ -291,7 +290,7 @@ public class cache
       meta_address_.add( host + ":" + String.valueOf(port) );
     }
     
-    public table_handler open_table(String name, rpc_session.Factory factory, key_hasher hasher) throws ReplicationException, TException
+    public table_handler open_table(String name, rpc_session.Factory factory, key_hash hasher) throws ReplicationException, TException
     {
       table_handler handle = new table_handler(this, name, factory, hasher);
       synchronized (this) 

@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import dsn.base.error_code;
 import dsn.thrift.TMsgBlockProtocol;
 import dsn.thrift.TMsgBlockTransport;
 
@@ -50,7 +49,7 @@ public class rpc_session extends rrdb.Client
   private int pending_recv_seqid_ = 0;
   private boolean has_pending_ = false;
   
-  private final TreeMap<Integer, dsn.operator.client_operator> pending_ops_ = new TreeMap<Integer, dsn.operator.client_operator>();
+  private final TreeMap<Integer, Object> pending_ops_ = new TreeMap<Integer, Object>();
   public rpc_session(dsn.base.rpc_address addr) {
     super(null);
     this.addr_ = addr;
@@ -184,30 +183,31 @@ public class rpc_session extends rrdb.Client
     }
   }
   
-  private dsn.operator.client_operator get_pending_op(int sequence_id, boolean is_remove_it)
+  private Object get_pending_op(int sequence_id, boolean is_remove_it)
   {
     Integer key = new Integer(sequence_id);
-    dsn.operator.client_operator value = pending_ops_.get(key);
-    if (value != null)
+    Object value = pending_ops_.get(key);
+    if (value != null && is_remove_it)
       pending_ops_.remove(key);
     return value;   
   }
   
-  private void put_pending_op(int sequence_id, dsn.operator.client_operator op)
+  private void put_pending_op(int sequence_id, Object notifier)
   {
-    pending_ops_.put(new Integer(sequence_id), op);
+    pending_ops_.put(new Integer(sequence_id), notifier);
   }
 
   private void notify_all()
   {
-    for (Entry<Integer, dsn.operator.client_operator> entry: pending_ops_.entrySet())
-      utils.tools.notify(entry.getValue().notifier);
+    for (Entry<Integer, Object> entry: pending_ops_.entrySet())
+      utils.tools.notify(entry.getValue());
     pending_ops_.clear();
   }
   
   public void recv_message2(int sequence_id, long signature, dsn.operator.client_operator op) throws TException
   {
-    synchronized (op.notifier) {
+    Object notifier = utils.threads.get_notifier();
+    synchronized (notifier) {
       while (true) {
         if (this.signature_ != signature) {
           op.set_result_error(dsn.base.error_code.error_types.ERR_TIMEOUT);
@@ -236,13 +236,13 @@ public class rpc_session extends rrdb.Client
               else {
                 has_pending_ = true;
                 pending_recv_seqid_ = msg.seqid;
-                dsn.operator.client_operator another = get_pending_op(msg.seqid, true);
+                Object another = get_pending_op(msg.seqid, true);
                 if (another != null) {
-                  utils.tools.notify(op.notifier);
+                  utils.tools.notify(another);
                 }
               }
             }
-            put_pending_op(sequence_id, op);
+            put_pending_op(sequence_id, notifier);
           }
           catch (TException e) {
             logger.info("recv message with exception {}, sequence id {}", e.getMessage(), sequence_id);
@@ -262,7 +262,7 @@ public class rpc_session extends rrdb.Client
             throw e;
           }
         }
-        utils.tools.waitForever(op.notifier);
+        utils.tools.waitForever(notifier);
       }
     }
   }

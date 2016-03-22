@@ -1,9 +1,9 @@
 package rrdb;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import org.apache.thrift.TException;
 
@@ -13,45 +13,21 @@ public class Cluster {
   static final int retry_when_meta_loss = 5;
   
   private cache.cluster_handler cluster_;   
-  private static boolean ignoreLine(String line) {
-    if (line == null || line.isEmpty() || line.charAt(0)=='\n' || line.charAt(0)=='#')
-      return true;
-    return false;
-  }
 
-  private static String[] get_address(String line) throws IllegalArgumentException
-  {
-    String[] result = line.split(":");
-    if (result == null || result.length != 2)
-      throw new IllegalArgumentException("invalid ip address: "+line);    
-    return result;
-  }
-  
   public Cluster(String configFile) throws IOException, IllegalArgumentException
   {
     cluster_ = new cache.cluster_handler(configFile, retry_when_meta_loss);
-
-    FileReader dataFile = new FileReader(configFile);
-    @SuppressWarnings("resource")
-    BufferedReader bufferFile = new BufferedReader(dataFile);
+    Properties config = new Properties();
+    FileInputStream inputFile = new FileInputStream(configFile);
+    config.load(inputFile);
     
-    String line;
-    boolean startReadMeta = false;
-    while ( (line = bufferFile.readLine()) != null ) {
-      line.trim();
-      if ( ignoreLine(line) )
-        continue;
-      
-      if ( "[replication.meta_servers]".equals(line) )
-        startReadMeta = true;
-      else if (startReadMeta == true) {
-        if ( line.startsWith("[") )
-          startReadMeta = false;
-        else {
-          String[] pair = get_address(line);
-          cluster_.add_meta(pair[0], Integer.parseInt(pair[1]));
-        }
-      }
+    String meta_list = config.getProperty("replication.meta_servers");
+    if (meta_list == null)
+      throw new IllegalArgumentException("no property replication.meta_servers");
+    String[] meta_address = meta_list.split(",");
+    for (String addr: meta_address) {
+      String[] pair = addr.split(":");
+      cluster_.add_meta(pair[0], Integer.valueOf(pair[1]));
     }
   }
   
@@ -60,7 +36,7 @@ public class Cluster {
     return new Table(cluster_, name);
   }
   
-  public Table openTable(String name, dsn.apps.cache.key_hasher hash_function) throws ReplicationException, TException
+  public Table openTable(String name, cache.key_hash hash_function) throws ReplicationException, TException
   {
     return new Table(cluster_, name, hash_function);
   }
@@ -95,9 +71,11 @@ public class Cluster {
       long time = System.currentTimeMillis();
       for (int i=0; i<total_count; ++i)
       {
-        System.out.println(name + "round " + i);
+        if ( (i+1)%1000 == 0)
+          System.out.println(name + "round " + i);
+        
         int t = (int) (Math.random()*(total_count-i));
-        if (t < left_put) {       
+        if (t < left_put) {
           dsn.base.blob key = new dsn.base.blob(name+String.valueOf(key_cursor));
           dsn.base.blob value = new dsn.base.blob(String.valueOf( values.get(key_cursor) ));
           
@@ -128,7 +106,8 @@ public class Cluster {
       
       while (assigned_get < total_keys)
       {
-        System.out.println(name + "get round " + assigned_get);
+        if ( (assigned_get+1)%1000 == 0 )
+          System.out.println(name + "get round " + assigned_get);
         try {
           dsn.base.blob key = new dsn.base.blob(name + String.valueOf(assigned_get));
           read_response resp = table.get(key);
@@ -190,49 +169,11 @@ public class Cluster {
     }
   }
   
-  private static void definiteLoop(Table t) 
-  {
-    int i=0;
-    while (true) {
-      dsn.base.blob key = new dsn.base.blob( "test_key" + String.valueOf(i));
-      StringBuilder sb = new StringBuilder();
-      for (int j=0; j<10; ++j)
-        sb.append(String.valueOf(i));
-      
-      while ( true ) {
-        try {
-          int answer = t.put(new update_request(key, new dsn.base.blob(sb.toString())));
-          System.out.println("put key " + key.data + " with result " + answer);          
-          utils.tools.sleepFor(1000);
-          
-          read_response resp = t.get(key);
-          System.out.println("read result: " + resp.toString());
-          utils.tools.sleepFor(1000);
-          
-          answer = t.remove(key);
-          System.out.println("remove result: " + String.valueOf(answer));
-          utils.tools.sleepFor(1000);
-          
-          resp = t.get(key);
-          System.out.println("read result: " + resp.toString());
-          utils.tools.sleepFor(1000);
-          
-          break;
-        }
-        catch (TException | ReplicationException e) {
-          e.printStackTrace();
-        }
-      }
-      
-      ++i;
-    }
-  }
-  
   public static void main(String[] args) throws IllegalArgumentException, IOException, ReplicationException, TException
   {
-    Cluster c = new Cluster("config.ini");
+    Cluster c = new Cluster("jardb.properties");
     Table t = c.openTable("rrdb.instance0");
-   
+    
     ping(t);
     multiThreadTest(t);
   }

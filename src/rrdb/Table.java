@@ -20,7 +20,7 @@ public class Table {
   {
     table_ = cluster.open_table(tableName, new rpc_session.Factory(), new cache.default_hasher());
   }
-  Table(cache.cluster_handler cluster, String tableName, dsn.apps.cache.key_hasher hash_function) throws ReplicationException, TException 
+  Table(cache.cluster_handler cluster, String tableName, cache.key_hash hash_function) throws ReplicationException, TException
   {
     table_ = cluster.open_table(tableName, new rpc_session.Factory(), hash_function);
   }

@@ -9,5 +9,4 @@ public abstract class client_operator {
   public abstract dsn.base.error_code get_result_error();
   public abstract void set_result_error(dsn.base.error_code.error_types type);
   public abstract dsn.replication.global_partition_id get_op_gpid();
-  public Object notifier;
 };

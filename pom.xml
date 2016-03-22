@@ -5,12 +5,12 @@
   <artifactId>pegasus-client</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
-  <name>Pegasus Client Module</name>
+  <name>Pegasus Java Client</name>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
+      <version>4.8.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -41,7 +41,7 @@
         <filtering>true</filtering>
       </resource>
       <resource>
-        <directory>${project.basedir}/script</directory>
+        <directory>${project.basedir}/scripts</directory>
         <filtering>true</filtering>
       </resource>
       <resource>
@@ -109,38 +109,11 @@
               <outputDirectory>${project.basedir}/release</outputDirectory>
               <resources>
                 <resource>
-                  <directory>script</directory>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>configuration</directory>
+                  <directory>scripts</directory>
                   <filtering>true</filtering>
                 </resource>
               </resources>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.8</version>
-        <executions>
-          <execution>
-            <id>process-resources</id>
-            <phase>process-resources</phase>
-            <configuration>
-              <target>
-                <chmod file="release/*.sh" perm="755"/>
-                <chmod file="release/digest_import" perm="755"/>
-                <chmod file="release/digest_server" perm="755"/>
-                <chmod file="release/reg_digest_server" perm="755"/>
-                <chmod file="release/rrdb_client" perm="755"/>
-              </target>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>

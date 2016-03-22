@@ -243,7 +243,7 @@ public class cache {
             throw new ReplicationException(error_types.ERR_NO_META_SERVER);
         }
 
-        public cluster_handler(String name, int retries_count) {
+        public cluster_handler(int retries_count) {
             call_meta_retries_count_ = retries_count;
             meta_leader_ = 0;
             metas_ = new ArrayList<meta.Client>();

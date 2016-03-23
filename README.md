@@ -20,11 +20,9 @@ Microseconds per op:
 Count: 100000  Average: 531.3196  StdDev: 1329.14
 Min: 397.0000  Median: 488.5172  Max: 351585.0000
 
-
 readrandom_rrdb :     345.503 micros/op 2894 ops/sec;    0.3 MB/s (100000 of 100000 found)
 Microseconds per op:
 Count: 100000  Average: 345.5033  StdDev: 108.39
 Min: 140.0000  Median: 348.0257  Max: 8663.0000
-
 ```
 

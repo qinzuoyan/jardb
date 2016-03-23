@@ -1,6 +1,6 @@
 # Pegasus Java Client
 
-Performance test result:
+Performance test result (using com.xiaomi.infra.pegasus.client.TestBench):
 ```
 fillseq :     430.3008 micros/op 2324.0 ops/sec
 Microseconds per op:

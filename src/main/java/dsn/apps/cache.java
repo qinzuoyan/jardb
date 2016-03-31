@@ -19,13 +19,13 @@ import dsn.utils.tools;
 
 public class cache {
     public interface key_hash {
-        long hash(String key);
+        long hash(byte[] key);
     }
 
     public static class default_hasher implements key_hash {
         @Override
-        public long hash(String key) {
-            return tools.dsn_crc64(key.getBytes());
+        public long hash(byte[] key) {
+            return tools.dsn_crc64(key);
         }
     }
 
@@ -113,7 +113,7 @@ public class cache {
             query_partition_count();
         }
 
-        public dsn.replication.global_partition_id get_gpid(String key) {
+        public dsn.replication.global_partition_id get_gpid(byte[] key) {
             dsn.replication.global_partition_id result = new dsn.replication.global_partition_id(app_id_, -1);
             result.pidx = (int) (hasher_.hash(key) % clients_.length);
             return result;

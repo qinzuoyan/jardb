@@ -47,8 +47,8 @@ public class TestPing {
 
                 int t = (int) (Math.random() * (total_count - i));
                 if (t < left_put) {
-                    dsn.base.blob key = new dsn.base.blob(name + String.valueOf(key_cursor));
-                    dsn.base.blob value = new dsn.base.blob(String.valueOf(values.get(key_cursor)));
+                    dsn.base.blob key = new dsn.base.blob( (name + String.valueOf(key_cursor)).getBytes() );
+                    dsn.base.blob value = new dsn.base.blob(String.valueOf(values.get(key_cursor)).getBytes());
 
                     try {
                         if (table.put(new update_request(key, value)) != 0)
@@ -64,7 +64,7 @@ public class TestPing {
                     int index = (int) (Math.random() * Math.min(key_cursor + 100, total_keys));
 
                     try {
-                        dsn.base.blob key = new dsn.base.blob(name + String.valueOf(index));
+                        dsn.base.blob key = new dsn.base.blob( (name + String.valueOf(index)).getBytes() );
                         if (table.remove(key) != 0)
                             System.out.printf("%s: remove failed, key=%s\n", name, key.data);
                         else if (index < key_cursor)
@@ -81,10 +81,10 @@ public class TestPing {
                 if (i % 1000 == 0)
                     System.out.println(name + "get round " + i);
                 try {
-                    dsn.base.blob key = new dsn.base.blob(name + String.valueOf(i));
+                    dsn.base.blob key = new dsn.base.blob( (name + String.valueOf(i)).getBytes() );
                     read_response resp = table.get(key);
                     if (resp.error == 0) {
-                        value_sum += Integer.valueOf(resp.getValue());
+                        value_sum += Integer.valueOf( new String(resp.getValue().data) );
                     }
                 } catch (TException e) {
                     e.printStackTrace();
@@ -108,16 +108,16 @@ public class TestPing {
         Table t = c.openTable("rrdb.instance0");
 
         System.out.println("ping our system with simple operations");
-        int answer = t.put(new update_request(new dsn.base.blob("hello"), new dsn.base.blob("world")));
+        int answer = t.put(new update_request(new dsn.base.blob("hello".getBytes()), new dsn.base.blob("world".getBytes())));
         System.out.println("put result: " + String.valueOf(answer));
 
-        read_response resp = t.get(new dsn.base.blob("hello"));
+        read_response resp = t.get(new dsn.base.blob("hello".getBytes()));
         System.out.println("read result: " + resp.toString());
 
-        answer = t.remove(new dsn.base.blob("hello"));
+        answer = t.remove(new dsn.base.blob("hello".getBytes()));
         System.out.println("remove result: " + String.valueOf(answer));
 
-        resp = t.get(new dsn.base.blob("hello"));
+        resp = t.get(new dsn.base.blob("hello".getBytes()));
         System.out.println("read result: " + resp.toString());
     }
 

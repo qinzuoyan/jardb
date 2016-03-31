@@ -14,6 +14,7 @@ import org.apache.thrift.scheme.StandardScheme;
 import org.apache.thrift.scheme.TupleScheme;
 import org.apache.thrift.protocol.TTupleProtocol;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
         schemes.put(TupleScheme.class, new blobTupleSchemeFactory());
     }
 
-    public String data;
+    public byte[] data;
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -106,7 +107,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
         data = null;
     }
 
-    public blob(String data) {
+    public blob(byte[] data) {
         this.data = data;
     }
 
@@ -114,7 +115,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
      * Performs a deep copy on <i>other</i>.
      */
     public blob(blob other) {
-        data = other.data;
+        data = other.data.clone();
     }
 
     public blob deepCopy() {
@@ -173,7 +174,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
         if (!getClass().equals(other.getClass())) {
             return getClass().getName().compareTo(other.getClass().getName());
         }
-        return data.compareTo(other.data);
+        return 0;
     }
 
     public _Fields fieldForId(int fieldId) {
@@ -191,8 +192,7 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("blob(");
-        boolean first = true;
-
+        sb.append(data);
         sb.append(")");
         return sb.toString();
     }
@@ -227,13 +227,16 @@ public class blob implements org.apache.thrift.TBase<blob, blob._Fields>, java.i
     private static class blobStandardScheme extends StandardScheme<blob> {
 
         public void read(org.apache.thrift.protocol.TProtocol iprot, blob struct) throws org.apache.thrift.TException {
-            struct.data = iprot.readString();
+            ByteBuffer buffer = iprot.readBinary();
+            byte[] array = buffer.array();
+            struct.data = new byte[array.length];
+            buffer.get(struct.data);
         }
 
         public void write(org.apache.thrift.protocol.TProtocol oprot, blob struct) throws org.apache.thrift.TException {
-            oprot.writeString(struct.data);
+            ByteBuffer buf = ByteBuffer.wrap(struct.data);
+            oprot.writeBinary(buf);
         }
-
     }
 
     private static class blobTupleSchemeFactory implements SchemeFactory {

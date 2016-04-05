@@ -1,29 +1,25 @@
 package com.xiaomi.infra.pegasus.client;
 
-import dsn.apps.ReplicationException;
-import dsn.apps.read_response;
-import dsn.apps.update_request;
-import junit.framework.Assert;
-import org.apache.thrift.TException;
+import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by mi on 16-3-23.
  */
 public class TestBench {
     @Test
-    public void testBench() throws IllegalArgumentException, IOException, TException, ReplicationException {
-        Cluster cluster = new Cluster();
-        Table table = cluster.openTable("rrdb.instance0");
+    public void testBench() throws PException {
+        PegasusClientInterface client = PegasusClientFactory.getSingletonClient();
+        String tableName = "rrdb.instance0";
 
         System.out.println("start to run single-thread test");
 
         int total_count = 100000;
-        ArrayList<String> keys = new ArrayList<String>();
-        ArrayList<String> values = new ArrayList<String>();
+        ArrayList<byte[]> keys = new ArrayList<byte[]>();
+        ArrayList<byte[]> values = new ArrayList<byte[]>();
         for (int i = 0; i < total_count; i++) {
             String key = "testBench-" + String.format("%06d", i);
             String value = key + "-";
@@ -33,8 +29,8 @@ public class TestBench {
             while (sb.length() < 100) {
                 sb.append('0');
             }
-            keys.add(key);
-            values.add(value);
+            keys.add(key.getBytes());
+            values.add(value.getBytes());
         }
 
         {
@@ -43,12 +39,9 @@ public class TestBench {
             long start_time = System.nanoTime();
             long last_time = start_time;
             for (int i = 0; i < total_count; i++) {
-                dsn.base.blob key = new dsn.base.blob(keys.get(i));
-                dsn.base.blob value = new dsn.base.blob(values.get(i));
                 long begin_time = System.nanoTime();
-                int r = table.put(new update_request(key, value));
+                client.set(tableName, keys.get(i), null, values.get(i));
                 long end_time = System.nanoTime();
-                Assert.assertEquals(0, r);
                 long dur_time = end_time - begin_time;
                 if (dur_time < min_time) {
                     min_time = dur_time;
@@ -86,12 +79,11 @@ public class TestBench {
             long start_time = System.nanoTime();
             long last_time = start_time;
             for (int i = 0; i < total_count; i++) {
-                dsn.base.blob key = new dsn.base.blob(keys.get(i));
                 long begin_time = System.nanoTime();
-                read_response r = table.get(key);
+                byte[] value = client.get(tableName, keys.get(i), null);
                 long end_time = System.nanoTime();
-                Assert.assertEquals(0, r.getError());
-                Assert.assertEquals(values.get(i), r.getValue());
+                Assert.assertTrue(value != null);
+                Assert.assertTrue(Arrays.equals(values.get(i), value));
                 long dur_time = end_time - begin_time;
                 if (dur_time < min_time) {
                     min_time = dur_time;

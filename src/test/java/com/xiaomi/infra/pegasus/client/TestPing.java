@@ -1,43 +1,39 @@
 package com.xiaomi.infra.pegasus.client;
 
-import dsn.apps.ReplicationException;
-import dsn.apps.read_response;
-import dsn.apps.update_request;
-import junit.framework.Assert;
-import org.apache.thrift.TException;
+import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.SynchronousQueue;
+import java.util.Arrays;
 
 /**
  * Created by mi on 16-3-22.
  */
 public class TestPing {
     @Test
-    public void testPing() throws IllegalArgumentException, IOException, TException, ReplicationException {
-        Cluster c = new Cluster();
-        Table t = c.openTable("rrdb.instance0");
+    public void testPing() throws PException {
+        PegasusClientInterface client = PegasusClientFactory.getSingletonClient();
+        String tableName = "rrdb.instance0";
 
-        System.out.println("start to run ping test");
+        byte[] hashKey = "hello".getBytes();
+        byte[] sortKey = "0".getBytes();
+        byte[] value = "world".getBytes();
 
-        System.out.println("ping our system with simple operations");
-        int answer = t.put(new update_request(new dsn.base.blob("hello"), new dsn.base.blob("world")));
-        System.out.println("put result: " + String.valueOf(answer));
-        Assert.assertEquals(0, answer);
+        System.out.println("set value ...");
+        client.set(tableName, hashKey, sortKey, value);
+        System.out.println("set value ok");
 
-        read_response resp = t.get(new dsn.base.blob("hello"));
-        System.out.println("read result: " + resp.toString());
-        Assert.assertEquals(0, resp.getError());
-        Assert.assertEquals("world", resp.getValue());
+        System.out.println("get value ...");
+        byte[] result = client.get(tableName, hashKey, sortKey);
+        Assert.assertTrue(Arrays.equals(value, result));
+        System.out.println("get value ok");
 
-        answer = t.remove(new dsn.base.blob("hello"));
-        System.out.println("remove result: " + String.valueOf(answer));
-        Assert.assertEquals(0, answer);
+        System.out.println("del value ...");
+        client.del(tableName, hashKey,sortKey);
+        System.out.println("del value ok");
 
-        resp = t.get(new dsn.base.blob("hello"));
-        System.out.println("read result: " + resp.toString());
-        Assert.assertEquals(1, resp.getError());
+        System.out.println("get deleted value ...");
+        result = client.get(tableName, hashKey, sortKey);
+        Assert.assertEquals(result, null);
+        System.out.println("get deleted value ok");
     }
 }

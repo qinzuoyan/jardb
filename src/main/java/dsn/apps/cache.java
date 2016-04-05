@@ -1,13 +1,5 @@
 package dsn.apps;
 
-import java.util.*;
-
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.slf4j.Logger;
-
 import dsn.base.error_code.error_types;
 import dsn.operator.client_operator;
 import dsn.replication.global_partition_id;
@@ -16,16 +8,26 @@ import dsn.replication.query_cfg_response;
 import dsn.thrift.TMsgBlockProtocol;
 import dsn.thrift.TMsgBlockTransport;
 import dsn.utils.tools;
+import org.apache.thrift.TException;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class cache {
     public interface key_hash {
-        long hash(String key);
+        long hash(byte[] key);
     }
 
     public static class default_hasher implements key_hash {
         @Override
-        public long hash(String key) {
-            return tools.dsn_crc64(key.getBytes());
+        public long hash(byte[] key) {
+            return tools.dsn_crc64(key);
         }
     }
 
@@ -113,7 +115,7 @@ public class cache {
             query_partition_count();
         }
 
-        public dsn.replication.global_partition_id get_gpid(String key) {
+        public dsn.replication.global_partition_id get_gpid(byte[] key) {
             dsn.replication.global_partition_id result = new dsn.replication.global_partition_id(app_id_, -1);
             result.pidx = (int) (hasher_.hash(key) % clients_.length);
             return result;

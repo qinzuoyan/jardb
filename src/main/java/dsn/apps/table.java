@@ -1,27 +1,24 @@
-package com.xiaomi.infra.pegasus.client;
+package dsn.apps;
 
-import org.apache.thrift.TException;
-
-import dsn.apps.*;
 import dsn.base.blob;
 import dsn.operator.rrdb_get_operator;
 import dsn.operator.rrdb_merge_operator;
 import dsn.operator.rrdb_put_operator;
 import dsn.operator.rrdb_remove_operator;
-
 import dsn.replication.global_partition_id;
 import dsn.replication.read_request_header;
 import dsn.replication.read_semantic;
 import dsn.replication.write_request_header;
+import org.apache.thrift.TException;
 
-public class Table {
+public class table {
     private cache.table_handler table_;
 
-    Table(cache.cluster_handler cluster, String tableName) throws ReplicationException, TException {
+    table(cache.cluster_handler cluster, String tableName) throws ReplicationException, TException {
         table_ = cluster.open_table(tableName, new rpc_session.Factory(), new cache.default_hasher());
     }
 
-    Table(cache.cluster_handler cluster, String tableName, cache.key_hash hash_function) throws ReplicationException, TException {
+    table(cache.cluster_handler cluster, String tableName, cache.key_hash hash_function) throws ReplicationException, TException {
         table_ = cluster.open_table(tableName, new rpc_session.Factory(), hash_function);
     }
 

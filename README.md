@@ -39,5 +39,5 @@ Microseconds per op:
 Count: 100000  Average: 303.4526  StdDev: 81.93
 Min: 115.0000  Median: 301.8661  Max: 3839.0000
 Percentiles: P50: 301.87 P75: 354.55 P99: 496.59 P99.9: 663.64 P99.99: 1450.00
-
 ```
+

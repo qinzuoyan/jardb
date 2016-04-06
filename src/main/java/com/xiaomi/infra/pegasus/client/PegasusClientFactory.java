@@ -35,4 +35,15 @@ public class PegasusClientFactory {
         }
         return singletonClient;
     }
+
+    public static void closeSingletonClient() throws PException {
+        if (singletonClient != null) {
+            synchronized (singletonClientLock) {
+                if (singletonClient != null) {
+                    singletonClient = null;
+                    LOG.info("Close Singleton PegasusClient");
+                }
+            }
+        }
+    }
 }

@@ -114,5 +114,7 @@ public class TestBench {
             System.out.println("Count: 100000  Average: " + avg_time_str);
             System.out.println("Min: " + (min_time / 1000) + ".0000  Max:" + (max_time / 1000) + ".0000");
         }
+
+        PegasusClientFactory.closeSingletonClient();
     }
 }

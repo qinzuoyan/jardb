@@ -124,6 +124,9 @@ public class PegasusClient implements PegasusClientInterface {
         if (hashKey == null || hashKey.length == 0) {
             throw new PException("Invalid parameter: hashKey should not be null or empty");
         }
+        if (value == null) {
+            throw new PException("Invalid parameter: value should not be null");
+        }
         table table = getTable(tableName);
         dsn.base.blob k = new dsn.base.blob(generateKey(hashKey, sortKey));
         dsn.base.blob v = new dsn.base.blob(value);

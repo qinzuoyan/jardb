@@ -27,7 +27,7 @@ public class PegasusClientFactory {
                     try {
                         singletonClient = PegasusClient.class.getConstructor(paraTypes).newInstance(parameters);
                         LOG.info("Create Singleton PegasusClient");
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         throw new PException("Create Singleton PegasusClient failed", e);
                     }
                 }

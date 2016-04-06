@@ -67,6 +67,10 @@ public class TestPing {
         Assert.assertEquals(result, null);
         System.out.println("get deleted value ok");
 
+        System.out.println("set value ...");
+        client.set(tableName, hashKey, sortKey, value);
+        System.out.println("set value ok");
+
         PegasusClientFactory.closeSingletonClient();
     }
 }

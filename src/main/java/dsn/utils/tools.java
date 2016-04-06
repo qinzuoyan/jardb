@@ -57,15 +57,23 @@ public class tools {
     }
 
     public static int dsn_crc32(byte[] array) {
+        return dsn_crc32(array, 0, array.length);
+    }
+
+    public static int dsn_crc32(byte[] array, int offset, int length) {
         int crc = -1;
-        for (int i = 0; i < array.length; ++i)
+        for (int i = offset; i < length; ++i)
             crc = dsn_crc.crc32_table[(array[i] ^ crc) & 0xFF] ^ (crc >>> 8);
         return ~crc;
     }
 
     public static long dsn_crc64(byte[] array) {
+        return dsn_crc64(array, 0, array.length);
+    }
+
+    public static long dsn_crc64(byte[] array, int offset, int length) {
         long crc = -1;
-        for (int i = 0; i < array.length; ++i)
+        for (int i = offset; i < length; ++i)
             crc = dsn_crc.crc64_table[(array[i] ^ (int) crc) & 0xFF] ^ (crc >>> 8);
         return ~crc;
     }

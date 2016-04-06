@@ -1,58 +1,47 @@
 package dsn.thrift;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.thrift.transport.*;
 import org.apache.thrift.protocol.TMessage;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 class thrift_header {
-    public static final int TYPE = 0x1234abcd;
-    public static final int HEADER_LENGTH = 28;
-
-    public int hdr_type = TYPE;
+    public static final int HEADER_LENGTH = 32;
+    public static final byte[] HEADER_TYPE = {'t','h','f','t'};
     public int hdr_crc32 = 0;
-    public int total_length;
-    public int body_offset;
-    public int request_hash;
-    //disable forward, enable replication
-    public long options = 3;
+    public int body_offset = 0;
+    public int body_length = 0;
+    public int request_hash = 0;
+    public int client_timeout = 0;
+    public long header_options = 3; //disable forward, enable replication
+
+    public byte[] toByteArray() {
+        ByteBuffer bf = ByteBuffer.allocate(HEADER_LENGTH);
+        bf.put(HEADER_TYPE);
+        bf.putInt(hdr_crc32);
+        bf.putInt(body_offset);
+        bf.putInt(body_length);
+        bf.putInt(request_hash);
+        bf.putInt(client_timeout);
+        bf.putLong(header_options);
+        return bf.array();
+    }
 };
 
 public class TMsgBlockTransport extends org.apache.thrift.transport.TTransport {
+    private static final Log LOG = LogFactory.getLog(TMsgBlockTransport.class);
+
     private TTransport realTransport_;
     private ByteArrayOutputStream buffer_;
     private boolean isWritingMsg_;
     private thrift_header header_;
-    private final byte[] inoutTemp = new byte[8];
-
-    private void writeRawI32(int i32) throws TTransportException {
-        inoutTemp[0] = (byte) (0xff & (i32 >> 24));
-        inoutTemp[1] = (byte) (0xff & (i32 >> 16));
-        inoutTemp[2] = (byte) (0xff & (i32 >> 8));
-        inoutTemp[3] = (byte) (0xff & (i32));
-        realTransport_.write(inoutTemp, 0, 4);
-    }
-
-    private void writeRawI64(long i64) throws TTransportException {
-        inoutTemp[0] = (byte) (0xff & (i64 >> 56));
-        inoutTemp[1] = (byte) (0xff & (i64 >> 48));
-        inoutTemp[2] = (byte) (0xff & (i64 >> 40));
-        inoutTemp[3] = (byte) (0xff & (i64 >> 32));
-        inoutTemp[4] = (byte) (0xff & (i64 >> 24));
-        inoutTemp[5] = (byte) (0xff & (i64 >> 16));
-        inoutTemp[6] = (byte) (0xff & (i64 >> 8));
-        inoutTemp[7] = (byte) (0xff & (i64));
-        realTransport_.write(inoutTemp, 0, 8);
-    }
 
     private void writeHeader() throws TTransportException {
-        writeRawI32(thrift_header.TYPE);
-        writeRawI32(0);
-        writeRawI32(header_.total_length);
-        writeRawI32(header_.body_offset);
-        writeRawI32(header_.request_hash);
-        writeRawI64(header_.options);
+        realTransport_.write(header_.toByteArray());
     }
 
     public TMsgBlockTransport(TTransport transport) {
@@ -99,7 +88,7 @@ public class TMsgBlockTransport extends org.apache.thrift.transport.TTransport {
 
     public void flush() throws TTransportException {
         if (isWritingMsg_) {
-            System.out.println("don't do flush when writing a message");
+            LOG.warn("should not flush when writing a message");
         } else {
             realTransport_.flush();
         }
@@ -110,8 +99,8 @@ public class TMsgBlockTransport extends org.apache.thrift.transport.TTransport {
     }
 
     public void proto_writeMessageEnd(int request_hash) throws TTransportException {
-        header_.total_length = thrift_header.HEADER_LENGTH + buffer_.size();
         header_.body_offset = thrift_header.HEADER_LENGTH;
+        header_.body_length = buffer_.size();
         header_.request_hash = request_hash;
         writeHeader();
 

@@ -7,8 +7,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,11 +48,9 @@ public class PegasusClient implements PegasusClientInterface {
         public long hash(byte[] key) {
             Validate.isTrue(key != null);
             ByteBuffer buf = ByteBuffer.wrap(key);
-            buf.order(ByteOrder.LITTLE_ENDIAN);
             int hashKeyLen = buf.getInt();
-            Validate.isTrue(hashKeyLen > 0 && hashKeyLen <= key.length - 4);
-            byte[] hashKey = Arrays.copyOfRange(key, 4, hashKeyLen);
-            return tools.dsn_crc64(hashKey);
+            Validate.isTrue(hashKeyLen > 0 && (4 + hashKeyLen <= key.length));
+            return tools.dsn_crc64(key, 4, hashKeyLen);
         }
     }
 
@@ -62,7 +58,6 @@ public class PegasusClient implements PegasusClientInterface {
         int hashKeyLen = hashKey.length;
         int sortKeyLen = (sortKey == null ? 0 : sortKey.length);
         ByteBuffer buf = ByteBuffer.allocate(4 + hashKeyLen + sortKeyLen);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
         buf.putInt(hashKeyLen);
         buf.put(hashKey);
         if (sortKeyLen > 0) {
